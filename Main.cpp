@@ -2,6 +2,10 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <cmath>
+#include <algorithm>
+#include <fstream>
+
 using namespace std;
 
 typedef map<char,int> DefFrequencyMap;
@@ -66,9 +70,24 @@ void CreateFrequencyMap(string str)
 void GetKey(string &plainText,string &cipherText, vector<int>& key, int t)
 {
 	int k;
-	for (unsigned i =0;i < t;i++)
+	for (unsigned i =0;i < cipherText.length();i++)
 	{
-		k = CharValueMap[cipherText[i]] - CharValueMap[plainText[i]] ;
+		if ( i == 0)
+		{
+			k = CharValueMap[cipherText[i]] - CharValueMap[plainText[i]] ;
+			//cout << "K = " << k << " shift = " << k << " prev = " << CharValueMap[cipherText[i]] << endl;
+		}
+		
+		
+		else
+		{	
+			int shift = CharValueMap[cipherText[i]] - CharValueMap[plainText[i]];
+			if (shift < 0)
+				shift = shift + 27;
+			k = shift - CharValueMap[cipherText[i - 1]];
+			//cout << "K = " << k << " shift = " << shift << " prev = " << CharValueMap[cipherText[i -1]] << endl;
+		}
+			
 		if (k < 0)
 			key.push_back(k + 27);
 		else
@@ -78,92 +97,53 @@ void GetKey(string &plainText,string &cipherText, vector<int>& key, int t)
 	}
 } // GetKey
 
-// Encrypt plaintext using the derived Key
-bool EncryptandCheck(string plainText,string &cipherText,int t, vector<int>& key)
-{
-	cout << plainText << endl;
-	int j =0;
-	for (unsigned i =0 ; i < plainText.length(); i++)
-	{
-	char ch = plainText.at(i);
-	
-		int pCount = CharValueMap[ch] ;
-		int sub = (pCount + key.at((i % 10)+ 1)) % 27;
-		if (sub == 0)
-			sub = 27;
-		
-		cout <<  ReverseCharValueMap[sub]  ;
-	}
-	
-	//cout << encryptedString;
-	return true;
-}
-
-// Initiates the cryptanalysis.
-int BreakCipher(int &t,string &cipherText)
-{
-	//cout << "You entered " << t << " and cipher " << cipherText;
-} // BreakCipher
-
-
-// Dummy encryption for testing
-void DummyEnc(string plainText)
-{
-	cout << plainText.length() << endl;
-	
-	for (unsigned i =0 ; i < plainText.length();i++)
-	{
-		char ch = plainText.at(i);
-	
-		int pCount = CharValueMap[ch] ;
-		int sub = (pCount + (i + 1)) % 27;
-		if (sub == 0)
-			sub = 27;
-		
-		cout <<  ReverseCharValueMap[sub]  ;
-	}
-	cout << endl << "nqvxeuyojxtkngxddjsmizxvyceqgqheuuhbrplgftpexsxvoxxgm uyrdlkum kwliomhqjluhzxobzbvulrjyzhyazorfguirm";
-}
 int main()
 {
 	int t;
 	string cipherText;
 	string t_string;
-	string plainText = "most organizations today depend on the use of data in two general ways standard business processes u";
-	
+					 	
 	cout << "Enter the number of key symbols \n";
 	getline(cin,t_string);
 	t = atoi(t_string.c_str());
 	cout << "Enter the cipher text \n";
 	getline(cin,cipherText);
 	
-	
-	//transform( cipherText.begin(), cipherText.end(), cipherText.begin(), ptr_fun <int, int> ( tolower ) );
-	//cout << "Lowercase: " << cipherText << endl;
-	//breakCipher(t,cipherText);
-	SetDefaultFMap();
+	//SetDefaultFMap();
 	SetDefaultValueMapping();
-	/*for (unsigned i = 0; i < cipherText.length(); i += t) 
-	{
-		
-		CreateFrequencyMap(cipherText.substr(i, t));
-	}
 	
-	 for ( const auto &p : CharValueMap )
-	{
-		std::cout << p.first << '\t' << p.second << std::endl;
-	} 
-	*/
+	ifstream myfile("Dictionary1.txt");
 	
-	//DummyEnc(plainText);
 	vector <int> key;
-	GetKey(plainText,cipherText,key,t);
-	//cout << key.size() << endl;
-	//for (unsigned i=0; i< key.size(); i++)
-	//	cout << key.at(i);
+	string line;
+	if(myfile.is_open())
+	{
+		while(getline(myfile,line))
+		{	
+			GetKey(line,cipherText,key,t); 
+			//cout << key.size() << endl;
+			//for (unsigned i=0; i< key.size(); i++)
+				//cout << key.at(i);
 	
-	EncryptandCheck(plainText,cipherText,t,key);
-	
+			std::sort (key.begin(), key.begin() + key.size()); 
+			std::vector<int>::iterator it;
+			it = unique (key.begin(), key.end());   
+                                                         
+			key.resize(distance(key.begin(),it) ); 
+			//cout << endl;
+			//std::ostream_iterator< int > output( cout, " " );
+			//std::copy( key.begin(), it, output );
+
+			if (key.size() <= t)
+			{
+				cout << "Plain text found:" <<endl << line;
+				break;
+			}
+			else
+				key.clear();
+		}
+		myfile.close();
+	}
 	return 0;
 } // main
 
