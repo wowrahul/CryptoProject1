@@ -3,7 +3,7 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
-    <File Name="Main.cpp"/>
+    <File Name="Main.cpp" ExcludeProjConfig=""/>
   </VirtualDirectory>
   <Settings Type="Executable">
     <GlobalSettings>
