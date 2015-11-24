@@ -10,14 +10,13 @@
 #include <algorithm>
 #include <fstream>
 #include <set>
-
+#include <sstream>
 using namespace std;
 
 // Variable declaration
 
 typedef map<char,int> DefFrequencyMap;
 typedef map<int, char> ReverseValueMap;
-DefFrequencyMap fMap;
 DefFrequencyMap CharValueMap;
 ReverseValueMap ReverseCharValueMap;
 vector<string> finalShortList;
@@ -25,7 +24,30 @@ vector<string> shortList;
 vector <string> shortList1;
 vector<string> dictionary2;
 vector<string> stringCombinationsTwoWords;
+typedef map<string, int> WordFrequencyMap;
+WordFrequencyMap fMap;
 
+
+// Creates a frequency map for any string.
+void CreateFrequencyMap(string str)
+{
+	//cout << " Inside frequency map " << str << endl;
+	//string str ("Test string");
+	map<string,int>::iterator it;
+	
+		
+		it = fMap.find(str); //find the character in the map
+		if( it == fMap.end() ) //if not present in the map
+		{
+			fMap.insert( make_pair(str,1) );//add an entry
+		}
+		else
+		{
+			it->second++; //else increment the frequency
+		}
+	
+	
+} // CreateFrequencyMap
 
 
 // Creates a map for values of alphabet. A-1,B-2,......Z-26,<SPACE>-0.
@@ -120,9 +142,14 @@ bool GetKeyCopy(string &plainText,string &cipherText, int t)
 				
 			}
 	}
-	std::sort(v.begin(), v.end()); 
+	/*std::sort(v.begin(), v.end()); 
 	auto last = std::unique(v.begin(), v.end());
-	v.erase(last, v.end());
+	v.erase(last, v.end()); */
+	std::sort(v.begin(), v.end());
+	std::vector<int>::iterator it;
+	it = unique(v.begin(), v.end());
+
+	v.resize(distance(v.begin(), it));
 	
 	if (v.size() <= t)
 	{
@@ -150,16 +177,16 @@ void permute (vector<string> & toBeCleared, vector<string> & toBeUsed,vector<str
 					{
 						string str = toBeCleared[i] + " " + dictionary2[k];
 						//cout << str << " " << str.length() << endl;
-						if (str.length() >= 100)
+						if (str.length() >= cipherText.length())
 								{
 									//finalShortList.push_back(str);
-								str = 	str.substr(0,100);
+								str = 	str.substr(0,cipherText.length());
 								}
 						bool result = GetKeyCopy(str,cipherText,t);
 						if (result)
 							{
 								toBeUsed.push_back(str);
-								if (str.length() >= 100)
+								if (str.length() >= cipherText.length())
 								{
 									finalShortList.push_back(str);
 									//str.substr(0,100);
@@ -172,6 +199,22 @@ void permute (vector<string> & toBeCleared, vector<string> & toBeUsed,vector<str
 	
 } // Permute
 
+
+std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems) {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        elems.push_back(item);
+    }
+    return elems;
+}
+
+
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, elems);
+    return elems;
+}
 
 // MAIN METHOD : Start Here.
 int main()
@@ -191,7 +234,11 @@ int main()
 	
 	// Load Dictionary 1
 	ifstream myfile("Dictionary1.txt");
-	
+	if (myfile.fail())
+	{
+		cerr << "Could not load Dictionary 1. Please ensure Dictionary1.txt is in the pwd." << endl;
+		return 0;
+	}
 	vector <int> key;
 	string line;
 	bool found = false;
@@ -221,11 +268,17 @@ int main()
 	} // End of Dictionary 1 search
 	
 		// Dictionary 2 search starts here
-		
+		if ( t > 10)
+			t = 10;
 		cout << endl << "Nothing found in dictionary 1...Searching in dictionary 2 now..." << endl;
 		
 		// Load Dictionay 2
 		ifstream myfile2("Dictionary2.txt");
+		if (myfile2.fail())
+		{
+			cerr << "Could not load Dictionary 2. Please ensure Dictionary2.txt is in the pwd." << endl;
+			return 0;
+		}
 		if(myfile2.is_open())
 		{
 			while(getline(myfile2,line))
@@ -288,34 +341,60 @@ int main()
 			cout  << endl << "Plaintext found in Dictionary 2:" << endl;
 		
 		
-		// TODO : Find a way to shorten the number of plaint texts. Right now its gives a few options.
-		// We should try to correct this. May be find the longest common substring or something....
-		set<string> finalPlaintTextSet;
-		pair<std::set<string>::iterator,bool> ret;
-		for (unsigned i =0; i < finalShortList.size();i++)
-		{
-			line = finalShortList[i] ;
-			
-			GetKey(line,cipherText,key,t); 
-			
-			std::sort (key.begin(), key.begin() + key.size()); 
-			std::vector<int>::iterator it;
-			it = unique (key.begin(), key.end());   
-                                                         
-			key.resize(distance(key.begin(),it) ); 
-			
-			if (key.size() <= t)
-			{
-				ret = finalPlaintTextSet.insert(line);
-				if (ret.second)
-					cout <<endl << line << endl;
-				//exit(0);
-			}
-			else
-				key.clear();
-		}
 		
-		cout << endl;
+		set<string> finalPlaintTextSet;
+		
+		/*if (finalShortList.size() == 1)
+			cout << finalShortList[0];
+		else
+		{
+			cout << finalShortList[rand() % finalShortList.size()] << endl;
+		}*/
+		
+		//cout << " Total results = " << finalShortList.size() << endl;
+		
+		bool finalResult = true;
+		string tempText = "";
+		
+		
+		for (unsigned i = 0; finalResult;i++)
+		{
+			string word = "";
+			fMap.clear();
+			std::vector<std::string> x;
+			for (unsigned j=0;j < finalShortList.size();j++)
+			{
+				x = split(finalShortList[j], ' ');	
+				
+				//cout << x[i] << " J " << j << endl ;
+				//word += x[i] + " ";
+				CreateFrequencyMap(x[i]);
+				x.clear();
+			}
+			//cout << "I = " << i << "  Word=" << word << endl;
+			
+			
+			// 
+			int max=0;
+			string highestWord = "";
+			for (auto x: fMap) 
+			{
+				if (max < x.second)
+				{
+					max = x.second;
+					highestWord = x.first;
+				}
+					
+			}
+			
+			tempText += highestWord + " ";
+			if (tempText.length() >= cipherText.length())
+				finalResult = false;
+			
+		}
+	
+		
+		cout  << tempText << endl;
 		
 	return 0;
 } // main
